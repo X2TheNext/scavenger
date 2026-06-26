@@ -58,27 +58,27 @@
     .leaflet-popup-tip { background: var(--navy2) !important; }
     /* Custom marker */
     .custom-marker {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--blue-bright);
-      border: 3px solid #fff;
-      box-shadow: 0 0 18px rgba(91, 157, 255, .7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #fff;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--blue-bright); border: 3px solid #fff;
+      box-shadow: 0 0 20px rgba(91,157,255,.8), 0 0 0 8px rgba(91,157,255,.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; color: #fff; font-weight: 900;
+      animation: markerGlow 2.5s ease-in-out infinite;
     }
     .custom-marker.hq {
-      background: #f0c850;
-      box-shadow: 0 0 22px rgba(240, 200, 80, .8);
-      border-color: #0a1c41;
+      background: #f0c850; border-color: #0a1c41;
+      box-shadow: 0 0 22px rgba(240,200,80,.9), 0 0 0 8px rgba(240,200,80,.15);
+      animation: markerGlowHQ 2.5s ease-in-out infinite;
     }
     .custom-marker.bonus {
       background: #20c870;
-      box-shadow: 0 0 22px rgba(32, 200, 112, .8);
+      box-shadow: 0 0 22px rgba(32,200,112,.9), 0 0 0 8px rgba(32,200,112,.15);
+      animation: markerGlowBonus 2.5s ease-in-out infinite;
     }
+    .custom-marker.collected { background: #3d5a80; box-shadow: 0 0 8px rgba(61,90,128,.3); border-color: #5d7a9f; animation: none; opacity: .6; }
+    @keyframes markerGlow { 0%,100% { box-shadow: 0 0 20px rgba(91,157,255,.8), 0 0 0 8px rgba(91,157,255,.12); } 50% { box-shadow: 0 0 30px rgba(91,157,255,1), 0 0 0 14px rgba(91,157,255,.08); } }
+    @keyframes markerGlowHQ { 0%,100% { box-shadow: 0 0 22px rgba(240,200,80,.9), 0 0 0 8px rgba(240,200,80,.15); } 50% { box-shadow: 0 0 35px rgba(240,200,80,1), 0 0 0 14px rgba(240,200,80,.08); } }
+    @keyframes markerGlowBonus { 0%,100% { box-shadow: 0 0 22px rgba(32,200,112,.9), 0 0 0 8px rgba(32,200,112,.15); } 50% { box-shadow: 0 0 35px rgba(32,200,112,1), 0 0 0 14px rgba(32,200,112,.08); } }
     .location-btn {
       position: absolute;
       top: 10px;
@@ -158,6 +158,12 @@
   });
   new LocateBtn().addTo(map);
 
+  // Fit all button
+  const fitBtn = L.DomUtil.create('button', 'fit-btn');
+  fitBtn.innerHTML = '🔲'; fitBtn.title = 'Show all checkpoints';
+  fitBtn.onclick = () => map.fitBounds(CHECKPOINTS.map(cp => [cp.lat, cp.lng]), { padding: [40,40], maxZoom: 16 });
+  document.getElementById('map').parentNode.appendChild(fitBtn);
+
   // Build markers
   const drawer = document.getElementById('drawer');
 
@@ -166,10 +172,10 @@
     const markerClass = cp.type === 'hq' ? 'hq' : cp.type === 'bonus' ? 'bonus' : '';
 
     const icon = L.divIcon({
-      className: `custom-marker ${markerClass}`,
+      className: `custom-marker ${markerClass} ${earned ? 'collected' : ''}`,
       html: earned ? '✅' : cp.emoji,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
       popupAnchor: [0, -20],
     });
 
