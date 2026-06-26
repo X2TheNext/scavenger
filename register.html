@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Register — U Street Hunt</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U Street Hunt">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .auth-card {
+      max-width: 420px;
+      margin: 60px auto;
+    }
+    .auth-card .card { padding: 32px; }
+    .auth-title {
+      font-weight: 900;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+    .phone-input {
+      font-size: 22px !important;
+      letter-spacing: .03em;
+      text-align: center;
+    }
+    .otp-input {
+      font-size: 28px !important;
+      letter-spacing: .4em;
+      text-align: center;
+      max-width: 200px;
+      margin: 0 auto;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .06em;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+    .profile-section {
+      margin-top: 20px;
+    }
+    .logged-in-card {
+      max-width: 420px;
+      margin: 60px auto;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div id="auth-screen" class="wrap">
+  <div class="auth-card card">
+    <div class="text-center">
+      <div class="eyebrow">Step 1 of 2</div>
+      <div class="auth-title">Your <span class="grad">phone number</span></div>
+      <p style="font-size:14px;color:var(--muted);margin-top:6px;">We'll text you a 6-digit code. No password needed.</p>
+    </div>
+
+    <div class="input-group mt-2">
+      <label>Phone Number</label>
+      <input type="tel" id="phone-input" class="phone-input" placeholder="(202) 555-0123" autocomplete="tel">
+    </div>
+
+    <button class="btn btn-block mt-2" id="send-otp-btn">Send Code →</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;">U.S. numbers only. Standard message rates may apply.</p>
+  </div>
+</div>
+
+<div id="otp-screen" class="wrap hidden">
+  <div class="auth-card card">
+    <div class="text-center">
+      <div class="eyebrow">Step 2 of 2</div>
+      <div class="auth-title">Enter your <span class="grad">code</span></div>
+      <p style="font-size:14px;color:var(--muted);margin-top:6px;" id="otp-sent-msg">Sent to your number.</p>
+    </div>
+
+    <div class="input-group mt-2 text-center">
+      <input type="text" id="otp-input" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    </div>
+
+    <button class="btn btn-block mt-2" id="verify-otp-btn">Verify →</button>
+
+    <div class="text-center mt-2">
+      <button class="btn btn-ghost btn-small" id="resend-otp-btn" disabled>Resend Code (30s)</button>
+    </div>
+    <div class="text-center mt-1">
+      <button class="btn btn-ghost btn-small" id="back-to-phone-btn">← Different number</button>
+    </div>
+  </div>
+</div>
+
+<div id="profile-screen" class="wrap hidden">
+  <div class="logged-in-card card">
+    <span style="font-size:48px;">🍪</span>
+    <div class="auth-title mt-1">You're <span class="grad">registered!</span></div>
+    <p style="font-size:15px;color:var(--ice);margin-top:8px;">Welcome to the U Street Hunt.</p>
+    <p style="font-size:13px;color:var(--muted);margin-top:4px;" id="profile-name-display"></p>
+
+    <div class="input-group mt-2">
+      <label>Hunter Name</label>
+      <input type="text" id="display-name-input" placeholder="Choose a display name" maxlength="24">
+    </div>
+
+    <div class="flex-row mt-2" style="justify-content:center;">
+      <a href="hunt.html" class="btn">📘 Your Passport →</a>
+      <button class="btn btn-ghost" id="logout-btn">Logout</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const authScreen = document.getElementById('auth-screen');
+  const otpScreen = document.getElementById('otp-screen');
+  const profileScreen = document.getElementById('profile-screen');
+  const phoneInput = document.getElementById('phone-input');
+  const otpInput = document.getElementById('otp-input');
+  const sendOtpBtn = document.getElementById('send-otp-btn');
+  const verifyOtpBtn = document.getElementById('verify-otp-btn');
+  const resendOtpBtn = document.getElementById('resend-otp-btn');
+  const backToPhoneBtn = document.getElementById('back-to-phone-btn');
+  const displayNameInput = document.getElementById('display-name-input');
+  const profileNameDisplay = document.getElementById('profile-name-display');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  let resendTimer = null;
+
+  // Check if already logged in
+  if (isLoggedIn()) {
+    authScreen.classList.add('hidden');
+    otpScreen.classList.add('hidden');
+    profileScreen.classList.remove('hidden');
+    const user = getSession();
+    displayNameInput.value = user.display_name || '';
+    profileNameDisplay.textContent = `Hunter since ${new Date().toLocaleDateString()}`;
+  }
+
+  // Format phone as user types
+  phoneInput.addEventListener('input', () => {
+    let val = phoneInput.value.replace(/[^\d]/g, '');
+    if (val.length > 10) val = val.slice(0, 10);
+    if (val.length > 6) {
+      val = `(${val.slice(0,3)}) ${val.slice(3,6)}-${val.slice(6)}`;
+    } else if (val.length > 3) {
+      val = `(${val.slice(0,3)}) ${val.slice(3)}`;
+    } else if (val.length > 0) {
+      val = `(${val}`;
+    }
+    phoneInput.value = val;
+  });
+
+  // Send OTP
+  sendOtpBtn.addEventListener('click', async () => {
+    const raw = phoneInput.value.replace(/[^\d]/g, '');
+    if (raw.length < 10) {
+      showToast('Enter a full 10-digit phone number', 'error');
+      return;
+    }
+
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = 'Sending...';
+
+    const clean = raw.startsWith('+') ? raw : `+1${raw}`;
+    sessionStorage.setItem('otp_phone', JSON.stringify(clean));
+
+    const { error } = await sendOTP(raw);
+    if (error) {
+      showToast(error.message || 'Failed to send code', 'error');
+      sendOtpBtn.disabled = false;
+      sendOtpBtn.textContent = 'Send Code →';
+      return;
+    }
+
+    showToast('Code sent! Check your phone.');
+    document.getElementById('otp-sent-msg').textContent = `Sent to ${clean}`;
+    authScreen.classList.add('hidden');
+    otpScreen.classList.remove('hidden');
+    otpInput.focus();
+
+    // Resend countdown
+    let countdown = 30;
+    resendOtpBtn.disabled = true;
+    resendOtpBtn.textContent = `Resend Code (${countdown}s)`;
+    resendTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(resendTimer);
+        resendOtpBtn.disabled = false;
+        resendOtpBtn.textContent = 'Resend Code';
+      } else {
+        resendOtpBtn.textContent = `Resend Code (${countdown}s)`;
+      }
+    }, 1000);
+  });
+
+  // Resend
+  resendOtpBtn.addEventListener('click', async () => {
+    const raw = phoneInput.value.replace(/[^\d]/g, '');
+    if (raw.length < 10) return;
+    const { error } = await sendOTP(raw);
+    if (error) showToast(error.message, 'error');
+    else showToast('Code resent!');
+  });
+
+  // Back to phone
+  backToPhoneBtn.addEventListener('click', () => {
+    otpScreen.classList.add('hidden');
+    authScreen.classList.remove('hidden');
+    if (resendTimer) clearInterval(resendTimer);
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.textContent = 'Send Code →';
+  });
+
+  // Verify OTP
+  verifyOtpBtn.addEventListener('click', async () => {
+    const token = otpInput.value.replace(/[^\d]/g, '');
+    if (token.length < 6) {
+      showToast('Enter the 6-digit code', 'error');
+      return;
+    }
+
+    verifyOtpBtn.disabled = true;
+    verifyOtpBtn.textContent = 'Verifying...';
+
+    const { error } = await verifyOTP(token);
+    if (error) {
+      showToast(error.message || 'Invalid code', 'error');
+      verifyOtpBtn.disabled = false;
+      verifyOtpBtn.textContent = 'Verify →';
+      return;
+    }
+
+    showToast('Welcome to the hunt! 🍪');
+    const user = getSession();
+    displayNameInput.value = user.display_name || '';
+    profileNameDisplay.textContent = `Hunter since ${new Date().toLocaleDateString()}`;
+
+    otpScreen.classList.add('hidden');
+    profileScreen.classList.remove('hidden');
+  });
+
+  // OTP auto-submit when 6 digits
+  otpInput.addEventListener('input', () => {
+    if (otpInput.value.replace(/[^\d]/g, '').length === 6) {
+      verifyOtpBtn.click();
+    }
+  });
+
+  // Update display name
+  displayNameInput.addEventListener('change', async () => {
+    const name = displayNameInput.value.trim();
+    if (!name || !currentUser) return;
+
+    const sb = initSupabase();
+    await sb.from('hunters').update({ display_name: name }).eq('id', currentUser.userId);
+    currentUser.display_name = name;
+    setSession(currentUser);
+    showToast('Name updated! ✨');
+  });
+
+  // Logout
+  logoutBtn.addEventListener('click', () => {
+    clearSession();
+    profileScreen.classList.add('hidden');
+    authScreen.classList.remove('hidden');
+    phoneInput.value = '';
+    otpInput.value = '';
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.textContent = 'Send Code →';
+    showToast('Logged out');
+  });
+</script>
+
+</body>
+</html>

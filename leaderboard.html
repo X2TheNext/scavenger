@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Leaderboard — U Street Hunt</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U Street Hunt">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .lb-header {
+      text-align: center;
+      padding: 40px 0 16px;
+    }
+    .lb-list {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .lb-empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+    .lb-you-card {
+      max-width: 500px;
+      margin: 20px auto 0;
+    }
+    .trophy { font-size: 20px; }
+    .refresh-hint {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap" id="lb-page">
+  <div class="lb-header">
+    <span style="font-size:40px;">🏆</span>
+    <h1 style="margin-top:4px;"><span class="grad">Leaderboard</span></h1>
+    <p class="sub" style="margin-top:6px;">Top hunters on the U Street corridor. Real-time.</p>
+  </div>
+
+  <div class="lb-list" id="lb-list">
+    <div class="lb-empty">Loading leaderboard...</div>
+  </div>
+
+  <div class="lb-you-card card card-accent hidden" id="you-card">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="trophy">📍</span>
+      <div style="flex:1;">
+        <div style="font-weight:800;font-size:16px;" id="you-name">You</div>
+        <div style="font-size:12px;color:var(--muted);">Rank <span id="you-rank">—</span></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:900;font-size:22px;color:var(--blue-bright);" id="you-points">0</div>
+        <div style="font-size:11px;color:var(--muted);">pts</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="refresh-hint mt-2">Leaderboard updates live as stamps are earned.</div>
+
+  <div class="text-center mt-2 mb-2">
+    <a href="hunt.html" class="btn btn-ghost btn-small">← Back to Passport</a>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const lbList = document.getElementById('lb-list');
+  const youCard = document.getElementById('you-card');
+
+  async function renderLeaderboard() {
+    // Try loading from Supabase; fall back gracefully
+    let leaders = [];
+    try {
+      leaders = await getLeaderboard(25);
+    } catch(e) {
+      lbList.innerHTML = '<div class="lb-empty">Leaderboard loading — check back soon.</div>';
+      return;
+    }
+
+    if (!leaders.length) {
+      lbList.innerHTML = `
+        <div class="lb-empty">
+          <span style="font-size:40px;">👀</span>
+          <p style="margin-top:10px;">No hunters yet! Be the first to register and claim #1.</p>
+          <a href="register.html" class="btn btn-small mt-1">Register Now →</a>
+        </div>
+      `;
+      return;
+    }
+
+    lbList.innerHTML = '';
+
+    leaders.forEach((h, i) => {
+      let rankClass = '';
+      let prefix = '';
+      if (i === 0) { rankClass = 'gold'; prefix = '🥇 '; }
+      else if (i === 1) { rankClass = 'top'; prefix = '🥈 '; }
+      else if (i === 2) { rankClass = 'top'; prefix = '🥉 '; }
+
+      const isYou = currentUser && h.id === currentUser.userId;
+      const row = document.createElement('div');
+      row.className = `lb-row ${isYou ? 'you' : ''}`;
+      row.innerHTML = `
+        <div class="lb-rank ${rankClass}">${prefix}${i + 1}</div>
+        <div class="lb-name">${escapeHTML(h.display_name || 'Hunter')} ${isYou ? '⭐' : ''}</div>
+        <div class="lb-points">${h.total_points || 0}pts</div>
+      `;
+      lbList.appendChild(row);
+    });
+
+    // Show user's own rank if logged in
+    if (isLoggedIn()) {
+      // Find self in leaders
+      const selfIdx = leaders.findIndex(h => h.id === currentUser?.userId);
+      if (selfIdx >= 0) {
+        document.getElementById('you-name').textContent = currentUser.display_name;
+        document.getElementById('you-rank').textContent = `#${selfIdx + 1}`;
+        document.getElementById('you-points').textContent = leaders[selfIdx].total_points || 0;
+        youCard.classList.remove('hidden');
+      } else {
+        // Not in top 25 — show local points
+        document.getElementById('you-name').textContent = currentUser.display_name;
+        document.getElementById('you-rank').textContent = 'Outside top 25';
+        document.getElementById('you-points').textContent = userPoints;
+        youCard.classList.remove('hidden');
+      }
+    } else {
+      youCard.classList.add('hidden');
+    }
+  }
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  renderLeaderboard();
+
+  // Auto-refresh every 30s
+  setInterval(renderLeaderboard, 30000);
+
+  // Refresh when becoming visible
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) renderLeaderboard();
+  });
+</script>
+
+</body>
+</html>

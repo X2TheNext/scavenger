@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Checkpoint — U Street Hunt</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U Street Hunt">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .cp-hero {
+      text-align: center;
+      padding: 50px 0 24px;
+    }
+    .cp-emoji-lg { font-size: 72px; }
+    .cp-card {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .perk-box {
+      background: rgba(26, 115, 232, .12);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+    }
+    .cp-meta {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cp-meta-item {
+      text-align: center;
+    }
+    .cp-meta-item .label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .cp-meta-item .value {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--white);
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap" id="cp-not-found">
+  <div class="cp-hero">
+    <span class="cp-emoji-lg">🔍</span>
+    <h1 style="margin-top:12px;">Checkpoint <span class="grad">Not Found</span></h1>
+    <p class="sub">This checkpoint isn't on the map. Check the corridor list.</p>
+    <a href="map.html" class="btn mt-2">← Back to Map</a>
+  </div>
+</div>
+
+<div class="wrap hidden" id="cp-content">
+  <div class="cp-hero">
+    <span class="cp-emoji-lg" id="cp-emoji">🍪</span>
+    <h1 style="margin-top:12px;" id="cp-name">Cookies DC</h1>
+    <div style="margin-top:8px;">
+      <span class="badge badge-blue" id="cp-type">HQ</span>
+      <span class="badge badge-gold hidden" id="cp-collected">✓ Collected</span>
+    </div>
+  </div>
+
+  <div class="cp-card card mt-2">
+    <div class="perk-box">
+      <div style="font-size:11px;color:var(--blue-bright);font-weight:700;letter-spacing:.08em;margin-bottom:4px;">PASSPORT PERK</div>
+      <div style="font-weight:700;font-size:18px;" id="cp-perk">Registration & Redemption HQ</div>
+    </div>
+
+    <div class="cp-meta mt-2">
+      <div class="cp-meta-item">
+        <div class="label">Points</div>
+        <div class="value" id="cp-points">HQ</div>
+      </div>
+      <div class="cp-meta-item">
+        <div class="label">Type</div>
+        <div class="value" id="cp-type-val">HQ</div>
+      </div>
+      <div class="cp-meta-item" id="cp-status-meta">
+        <div class="label">Status</div>
+        <div class="value" style="color:var(--muted);" id="cp-status">Not collected</div>
+      </div>
+    </div>
+
+    <!-- Scan to earn -->
+    <div class="text-center mt-2">
+      <button class="btn" id="cp-scan-btn">📷 Scan QR to Earn Stamp</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Find the QR code at this checkpoint. Scan it to earn your stamp and points.</p>
+      <div id="cp-already-done" class="hidden" style="color:var(--blue-bright);font-weight:700;margin-top:8px;">
+        ✅ You've already collected this stamp.
+      </div>
+    </div>
+
+    <div class="text-center mt-2" id="cp-sponsor-section" style="display:none;">
+      <div style="font-size:12px;color:var(--muted);">Featured Partner</div>
+      <div style="font-weight:700;color:var(--blue-bright);" id="cp-sponsor-name"></div>
+    </div>
+  </div>
+
+  <div class="text-center mt-2 mb-2">
+    <a href="map.html" class="btn btn-ghost btn-small">🗺️ View on Map</a>
+    <a href="hunt.html" class="btn btn-ghost btn-small">📘 My Passport</a>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id') || '';
+
+  const cp = getCheckpoint(id);
+  const notFound = document.getElementById('cp-not-found');
+  const content = document.getElementById('cp-content');
+
+  if (!cp) {
+    notFound.classList.remove('hidden');
+  } else {
+    notFound.classList.add('hidden');
+    content.classList.remove('hidden');
+
+    document.getElementById('cp-emoji').textContent = cp.emoji;
+    document.getElementById('cp-name').textContent = cp.name;
+    document.getElementById('cp-perk').textContent = cp.perk;
+    document.getElementById('cp-points').textContent = cp.points > 0 ? `+${cp.points} pts` : 'HQ';
+    document.getElementById('cp-type-val').textContent = cp.type.toUpperCase();
+
+    const typeBadge = document.getElementById('cp-type');
+    typeBadge.textContent = cp.type === 'hq' ? '🏠 HQ' : cp.type === 'bonus' ? '⭐ BONUS' : '📍 Checkpoint';
+
+    // Check if collected
+    const earned = userStamps.includes(cp.id);
+    const collectedBadge = document.getElementById('cp-collected');
+    const alreadyDone = document.getElementById('cp-already-done');
+    const scanBtn = document.getElementById('cp-scan-btn');
+    const statusEl = document.getElementById('cp-status');
+
+    if (earned) {
+      collectedBadge.classList.remove('hidden');
+      alreadyDone.classList.remove('hidden');
+      scanBtn.disabled = true;
+      scanBtn.textContent = '✅ Stamp Collected';
+      statusEl.textContent = 'Collected';
+      statusEl.style.color = 'var(--blue-bright)';
+    }
+
+    // Scan handler
+    scanBtn.addEventListener('click', async () => {
+      if (earned) {
+        showToast('Already collected!', 'error');
+        return;
+      }
+      if (!isLoggedIn()) {
+        showToast('Register first!', 'error');
+        window.location.href = 'register.html';
+        return;
+      }
+
+      // For QR scanning with html5-qrcode, or fallback manual
+      if (typeof Html5Qrcode !== 'undefined') {
+        // Start scanner
+        scanBtn.textContent = 'Starting camera...';
+        const scanner = new Html5Qrcode('cp-scan-btn');
+        try {
+          const result = await scanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: 250 },
+            async (decodedText) => {
+              // QR should contain checkpoint ID
+              if (decodedText === cp.id || decodedText.includes(cp.id)) {
+                await scanner.stop();
+                const result = await earnStamp(cp.id, cp.name, cp.points);
+                if (result.error) { showToast(result.error, 'error'); return; }
+                showToast(`+${cp.points} pts at ${cp.name}! 🎉`);
+                launchConfetti();
+                location.reload();
+              }
+            },
+            () => {} // ignore scan errors
+          );
+        } catch (err) {
+          scanBtn.textContent = '📷 Scan QR to Earn Stamp';
+          // Fallback to manual
+          const confirm = await Promise.resolve(window.confirm('QR scanner failed. Manually confirm stamp at ' + cp.name + '?'));
+          if (confirm) {
+            const result = await earnStamp(cp.id, cp.name, cp.points);
+            if (result.error) { showToast(result.error, 'error'); return; }
+            showToast(`+${cp.points} pts at ${cp.name}! 🎉`);
+            launchConfetti();
+            location.reload();
+          }
+        }
+      } else {
+        // No scanner library loaded — manual confirm
+        const confirmed = confirm(`Confirm stamp at ${cp.name}? (+${cp.points} pts)`);
+        if (!confirmed) return;
+        const result = await earnStamp(cp.id, cp.name, cp.points);
+        if (result.error) { showToast(result.error, 'error'); return; }
+        showToast(`+${cp.points} pts at ${cp.name}! 🎉`);
+        launchConfetti();
+        location.reload();
+      }
+    });
+  }
+
+  // Load user data to check stamps
+  if (isLoggedIn()) {
+    loadUserData();
+  }
+</script>
+
+</body>
+</html>

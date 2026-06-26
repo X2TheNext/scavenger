@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>My Passport — U Street Hunt</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U Street Hunt">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .passport-top {
+      text-align: center;
+      padding: 40px 0 20px;
+    }
+    .passport-card {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .pts-ring {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-glow);
+      padding: 16px 28px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+    }
+    .stamp-grid-large {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 14px;
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: rgba(91, 157, 255, .12);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--cookie-gradient);
+      border-radius: 4px;
+      transition: width .6s cubic-bezier(.16, 1, .3, 1);
+    }
+    .scan-section {
+      margin-top: 24px;
+    }
+    .qr-scanner-toggle {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap" id="logged-out-state">
+  <div class="passport-top">
+    <span style="font-size:56px;">📘</span>
+    <h1 style="margin-top:8px;">Your <span class="grad">Passport</span></h1>
+    <p class="sub">Register to start collecting stamps and earning points.</p>
+    <a href="register.html" class="btn mt-2">📲 Register Now →</a>
+  </div>
+</div>
+
+<div class="wrap hidden" id="passport-state">
+  <div class="passport-top">
+    <span style="font-size:28px;">👋</span>
+    <h1 id="hunter-greeting" style="margin-top:4px;font-size:clamp(22px,5vw,30px);">Hunter</h1>
+
+    <div class="pts-ring mt-2">
+      <span style="font-weight:800;font-size:36px;color:var(--blue-bright);" id="passport-points">0</span>
+      <div style="text-align:left;">
+        <div style="font-weight:700;font-size:14px;">Total Points</div>
+        <div style="font-size:12px;color:var(--muted);" id="passport-stamps-count">0 stamps</div>
+      </div>
+      <span style="font-size:24px;" id="rank-badge"></span>
+    </div>
+
+    <div style="margin-top:16px;max-width:300px;margin-left:auto;margin-right:auto;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600;">
+        <span>Progress</span><span id="progress-text">0/11</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stamps Grid -->
+  <section style="border-bottom:none;padding-top:20px;">
+    <div class="eyebrow">Your Stamps</div>
+    <h2>Collect 'em <span class="grad">all.</span></h2>
+    <div class="stamp-grid mt-2" id="stamp-grid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- Scan QR CTA -->
+  <section style="border-bottom:none;padding-top:24px;">
+    <div class="card card-accent text-center">
+      <span style="font-size:36px;">📷</span>
+      <h3 style="font-weight:800;font-size:18px;margin-top:8px;">Scan a checkpoint QR</h3>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px;">Find a QR code at any checkpoint counter. Snap it to earn your stamp + points instantly.</p>
+      <button class="btn btn-small mt-1" id="open-scanner-btn">Open QR Scanner →</button>
+    </div>
+  </section>
+
+  <!-- Spin CTA -->
+  <section style="border-bottom:none;padding-top:20px;" id="spin-cta-section">
+    <div class="card text-center">
+      <span style="font-size:36px;">🎰</span>
+      <h3 style="font-weight:800;font-size:18px;margin-top:8px;">You have <span class="grad" id="spin-count-display">0</span> spins</h3>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px;">Every 3 stamps = 1 free spin on the prize wheel.</p>
+      <a href="prizes.html" class="btn btn-small mt-1" id="spin-go-btn">Spin the Wheel →</a>
+    </div>
+  </section>
+
+  <!-- Quick Checkpoints -->
+  <section style="border-bottom:none;padding-top:20px;">
+    <div class="eyebrow">Nearby</div>
+    <h2>Find a <span class="grad">checkpoint</span></h2>
+    <div class="gap-1 mt-2" id="quick-checkpoints"></div>
+  </section>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const loggedOutState = document.getElementById('logged-out-state');
+  const passportState = document.getElementById('passport-state');
+  const stampGrid = document.getElementById('stamp-grid');
+  const quickCheckpoints = document.getElementById('quick-checkpoints');
+
+  function render() {
+    if (!isLoggedIn()) {
+      loggedOutState.classList.remove('hidden');
+      passportState.classList.add('hidden');
+      return;
+    }
+
+    loggedOutState.classList.add('hidden');
+    passportState.classList.remove('hidden');
+
+    const user = getSession() || currentUser;
+    document.getElementById('hunter-greeting').textContent = user.display_name || 'Hunter';
+    document.getElementById('passport-points').textContent = userPoints;
+    document.getElementById('passport-stamps-count').textContent = `${userStamps.length} stamp${userStamps.length !== 1 ? 's' : ''}`;
+
+    // Rank badge
+    const total = CHECKPOINTS.length;
+    let rankEmoji = '🌱';
+    if (userStamps.length >= total) rankEmoji = '👑';
+    else if (userStamps.length >= 8) rankEmoji = '🔥';
+    else if (userStamps.length >= 5) rankEmoji = '⭐';
+    else if (userStamps.length >= 2) rankEmoji = '🏃';
+    document.getElementById('rank-badge').textContent = rankEmoji;
+
+    // Progress bar
+    const pct = Math.round((userStamps.length / total) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${userStamps.length}/${total}`;
+
+    // Stamp grid
+    stampGrid.innerHTML = '';
+    CHECKPOINTS.forEach(cp => {
+      const earned = userStamps.includes(cp.id);
+      const stamp = document.createElement('div');
+      stamp.className = `stamp ${earned ? 'earned' : ''}`;
+      stamp.innerHTML = `
+        <span class="icon">${earned ? '✅' : cp.emoji}</span>
+        <span>${cp.name}</span>
+        ${earned ? `<span style="font-size:9px;color:var(--blue-bright);">+${cp.points || 0}</span>` : ''}
+      `;
+      stamp.title = cp.name;
+      stampGrid.appendChild(stamp);
+    });
+
+    // Spin display
+    document.getElementById('spin-count-display').textContent = spinTokens;
+    const spinBtn = document.getElementById('spin-go-btn');
+    if (spinTokens < 1) {
+      document.getElementById('spin-cta-section').style.opacity = '0.5';
+      spinBtn.style.opacity = '0.5';
+      spinBtn.style.pointerEvents = 'none';
+    } else {
+      document.getElementById('spin-cta-section').style.opacity = '1';
+      spinBtn.style.opacity = '1';
+      spinBtn.style.pointerEvents = 'auto';
+    }
+
+    // Quick checkpoints
+    quickCheckpoints.innerHTML = '';
+    CHECKPOINTS.slice(0, 5).forEach(cp => {
+      const earned = userStamps.includes(cp.id);
+      const row = document.createElement('a');
+      row.className = 'checkpoint-row';
+      row.href = `checkpoint.html?id=${cp.id}`;
+      row.innerHTML = `
+        <span style="font-size:22px;">${cp.emoji}</span>
+        <span class="checkpoint-name">${cp.name}</span>
+        <span class="checkpoint-perk">${cp.perk}</span>
+        <span style="font-size:12px;color:${earned ? 'var(--blue-bright)' : 'var(--muted)'};">${earned ? '✓ Collected' : '+' + cp.points + ' pts'}</span>
+      `;
+      quickCheckpoints.appendChild(row);
+    });
+  }
+
+  // QR Scanner
+  document.getElementById('open-scanner-btn').addEventListener('click', async () => {
+    if (!isLoggedIn()) {
+      showToast('Register first!', 'error');
+      return;
+    }
+    // Redirect to checkpoint scan or open scanner
+    // For QR scanning, we need html5-qrcode library
+    if (typeof Html5Qrcode === 'undefined') {
+      // Simplified: handle checkpoint by ID manual entry as fallback
+      const id = prompt('Enter the checkpoint code (e.g., chi-cha, service-bar):');
+      if (!id) return;
+      const cp = getCheckpoint(id);
+      if (!cp) { showToast('Unknown checkpoint!', 'error'); return; }
+      const result = await earnStamp(cp.id, cp.name, cp.points);
+      if (result.error) { showToast(result.error, 'error'); return; }
+      showToast(`+${cp.points} pts at ${cp.name}! 🎉`);
+      launchConfetti();
+      render();
+    }
+  });
+
+  // Initial render
+  render();
+
+  // Re-render if data loaded after init
+  document.addEventListener('DOMContentLoaded', () => {
+    if (currentUser && isLoggedIn()) {
+      loadUserData().then(render);
+    }
+  });
+</script>
+
+</body>
+</html>

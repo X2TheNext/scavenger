@@ -1,0 +1,22 @@
+{
+  "name": "U Street Hunt — Cookies DC",
+  "short_name": "U Street Hunt",
+  "description": "Collect the corridor. Claim the crown. Pokémon GO meets scavenger hunt on U Street. July 11–18.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#04102b",
+  "background_color": "#04102b",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

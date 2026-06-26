@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>U Street Hunt — Cookies DC</title>
+  <meta name="description" content="Collect the corridor. Claim the crown. A week-long passport hunt across U Street, anchored at Cookies DC. July 11–18.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="U Street Hunt — Cookies DC">
+  <meta property="og:description" content="Pokémon GO × Scavenger Hunt for Cookies DC. Explore U Street, earn points, win prizes. July 11–18.">
+  <meta property="og:url" content="https://ustreet-hunt.atcheofficial.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U Street Hunt">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Page-specific */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(600px 260px at 50% 20%, rgba(26,115,232,.35), transparent 55%),
+                  radial-gradient(300px 160px at 20% 80%, rgba(91,157,255,.15), transparent 50%);
+      z-index: 0;
+    }
+    .hero .wrap { position: relative; z-index: 1; }
+    .event-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .event-meta b { color: var(--white); display: block; font-size: 15px; }
+    .cta-stack {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 38px;
+    }
+    .sponsor-strip {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+    .sponsor-strip span {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="eyebrow">COOKIES DC × ATCHÉ</div>
+    <h1>The U Street <span class="grad">Hunt</span></h1>
+    <p class="sub">Pokémon GO meets scavenger hunt. Explore the corridor, scan at every stop, rack up points, and claim the crown. July 11–18.</p>
+
+    <div id="countdown-target" class="countdown mt-2">
+      <div class="countdown-block"><div class="countdown-number" id="cd-days">00</div><div class="countdown-label">Days</div></div>
+      <div class="countdown-block"><div class="countdown-number" id="cd-hours">00</div><div class="countdown-label">Hours</div></div>
+      <div class="countdown-block"><div class="countdown-number" id="cd-mins">00</div><div class="countdown-label">Minutes</div></div>
+      <div class="countdown-block"><div class="countdown-number" id="cd-secs">00</div><div class="countdown-label">Seconds</div></div>
+    </div>
+    <div id="launched-msg" class="hidden" style="font-weight:700;color:var(--blue-bright);font-size:20px;margin-top:18px;">🚀 The hunt is LIVE — go register!</div>
+
+    <div class="event-meta">
+      <div><b>July 11–18</b> All week</div>
+      <div><b>11 stops</b> U Street corridor</div>
+      <div><b>Cookies DC</b> HQ</div>
+      <div><b>Chi-Cha</b> Finale</div>
+    </div>
+
+    <div class="cta-stack">
+      <a href="register.html" class="btn">📲 Register to Hunt →</a>
+      <a href="map.html" class="btn btn-ghost">🗺️ Explore the Map</a>
+    </div>
+    <div class="text-center mt-1">
+      <button class="btn btn-ghost btn-small" onclick="promptInstall()" id="install-btn" style="display:none;">📱 Add to Home Screen</button>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">How It Works</div>
+    <h2>Four moves. <span class="grad">One crown.</span></h2>
+    <div class="steps mt-2">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <h4>Register</h4>
+          <p>Sign up with your phone number. Get your digital passport. It takes 30 seconds.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <h4>Explore</h4>
+          <p>Hit any of the 11 checkpoints on U Street. Spend money, support the block, scan the QR code at the counter.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <h4>Collect</h4>
+          <p>Every scan earns points + a digital stamp. Every 3 stamps = 1 free spin on the prize wheel.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <h4>Claim</h4>
+          <p>Hit point thresholds for prizes. Spin the wheel for instant rewards. Finish all 11 stops → finale raffle at Chi-Cha.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The Corridor</div>
+    <h2>11 stops. <span class="grad">All on U Street.</span></h2>
+    <p style="margin-top:12px;">Each checkpoint offers passport-holders an exclusive perk. Scan their QR, earn points, keep it moving.</p>
+    <div class="gap-1 mt-2" id="checkpoint-list">
+      <!-- Populated by JS -->
+    </div>
+    <div class="text-center mt-2">
+      <a href="map.html" class="btn btn-ghost btn-small">View Full Map →</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Prizes</div>
+    <h2>Win three ways. <span class="grad">Stack 'em up.</span></h2>
+    <div class="gap-2 mt-2">
+      <div class="card">
+        <div style="font-weight:800;font-size:17px;color:var(--blue-bright);">🎯 Points Thresholds</div>
+        <p style="margin-top:4px;font-size:14px;">50 pts → small prize &nbsp;·&nbsp; 100 pts → mid-tier &nbsp;·&nbsp; 150+ pts → grand prize eligible</p>
+      </div>
+      <div class="card">
+        <div style="font-weight:800;font-size:17px;color:var(--blue-bright);">🎰 Spin-to-Win</div>
+        <p style="margin-top:4px;font-size:14px;">Every 3 stamps = 1 free spin. Instant prizes — bonus points, merch, drink tokens, and more.</p>
+      </div>
+      <div class="card card-accent">
+        <div style="font-weight:800;font-size:17px;color:#f0c850;">🏆 Finale Raffle</div>
+        <p style="margin-top:4px;font-size:14px;">Complete all 11 stops → auto-entered into the Chi-Cha closing night raffle. Grand prize awaits.</p>
+      </div>
+    </div>
+    <div class="text-center mt-2">
+      <a href="prizes.html" class="btn btn-ghost btn-small">See All Prizes →</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap text-center">
+    <div class="eyebrow">Launched by</div>
+    <h2>Cookies DC <span class="grad">× ATCHÉ</span></h2>
+    <p>A community-first activation for the U Street corridor. Built by the culture, for the block.</p>
+    <div class="sponsor-strip mt-2">
+      <span>Featured Partners</span> · Design Essentials · Bask & Lather · PNC
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    ATCHÉ — community-first creative for the culture.<br>
+    <span style="color:var(--blue-bright)">ustreet-hunt.atcheofficial.com</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+<script>
+  // Render checkpoint list
+  const listEl = document.getElementById('checkpoint-list');
+  CHECKPOINTS.forEach(cp => {
+    const row = document.createElement('a');
+    row.className = 'checkpoint-row';
+    row.href = `checkpoint.html?id=${cp.id}`;
+    row.innerHTML = `
+      <span style="font-size:22px;">${cp.emoji}</span>
+      <span class="checkpoint-name">${cp.name}</span>
+      <span class="checkpoint-perk">${cp.perk}</span>
+      <span class="checkpoint-pts">${cp.points > 0 ? '+' + cp.points + ' pts' : 'HQ'}</span>
+    `;
+    listEl.appendChild(row);
+  });
+
+  // Countdown
+  function updateCountdown() {
+    const parts = getCountdownParts();
+    if (parts.launched) {
+      document.getElementById('countdown-target').classList.add('hidden');
+      document.getElementById('launched-msg').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('cd-days').textContent = String(parts.days).padStart(2, '0');
+    document.getElementById('cd-hours').textContent = String(parts.hours).padStart(2, '0');
+    document.getElementById('cd-mins').textContent = String(parts.minutes).padStart(2, '0');
+    document.getElementById('cd-secs').textContent = String(parts.seconds).padStart(2, '0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>
+
+</body>
+</html>
